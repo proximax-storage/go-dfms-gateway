@@ -1,6 +1,8 @@
 package server
 
 import (
+	apihttp "github.com/proximax-storage/go-xpx-dfms-api-http"
+
 	"github.com/valyala/fasthttp"
 )
 
@@ -12,6 +14,7 @@ type gatewayServer struct {
 func NewGatewayServer(cfg *GatewayConfig) *gatewayServer {
 	return &gatewayServer{
 		server: fasthttp.Server{
+			Handler:      NewGatewayHandler(apihttp.NewClientAPI(cfg.AddressAPI)).Serve,
 			Name:         cfg.Name,
 			GetOnly:      cfg.GetOnly,
 			LogAllErrors: cfg.LogError,
