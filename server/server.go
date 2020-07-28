@@ -6,15 +6,16 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-type gatewayServer struct {
+type gateway struct {
 	server  fasthttp.Server
 	address string
 }
 
-func NewGatewayServer(cfg *GatewayConfig) *gatewayServer {
-	return &gatewayServer{
+func NewGateway(cfg *GatewayConfig) *gateway {
+	handler := newMiddleware(newGatewayHandler(apihttp.NewClientAPI(cfg.AddressAPI)))
+	return &gateway{
 		server: fasthttp.Server{
-			Handler:      NewGatewayHandler(apihttp.NewClientAPI(cfg.AddressAPI)).Serve,
+			Handler:      handler,
 			Name:         cfg.Name,
 			GetOnly:      cfg.GetOnly,
 			LogAllErrors: cfg.LogError,
@@ -23,14 +24,14 @@ func NewGatewayServer(cfg *GatewayConfig) *gatewayServer {
 	}
 }
 
-func DefaultGatewayServer() *gatewayServer {
-	return NewGatewayServer(DefaultGatewayConfig())
+func DefaultGateway() *gateway {
+	return NewGateway(DefaultGatewayConfig())
 }
 
-func (g *gatewayServer) Start() error {
+func (g *gateway) Start() error {
 	return g.server.ListenAndServe(g.address)
 }
 
-func (g *gatewayServer) Stop() error {
+func (g *gateway) Stop() error {
 	return g.server.Shutdown()
 }
