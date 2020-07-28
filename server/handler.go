@@ -19,6 +19,10 @@ import (
 
 const cidPattern = "[a-z1-9]{65}"
 
+type DriveList struct {
+	Drives []string `json:"drives"`
+}
+
 type DirList struct {
 	Nodes []string `json:"list"`
 }
@@ -56,13 +60,20 @@ func (gh *gatewayHandler) Handle(ctx *fasthttp.RequestCtx) {
 	filePath := "/"
 
 	switch {
+	case string(path) == "/" || string(path) == "":
+		// like home page
+		gh.getDrives(ctx)
+		return
 	case match("^/"+cidPattern+"/?$", path):
+		// if only drive cid than list root
 		cid = strings.Trim(string(path), "/")
 	case match("^/"+cidPattern+"/.*", path):
+		// cid + file path
 		parsedPath := strings.SplitN(strings.Trim(string(path), "/"), "/", 2)
 		cid = parsedPath[0]
 		filePath += parsedPath[1]
 	default:
+		// bath is not supported
 		ctx.Response.SetStatusCode(fasthttp.StatusNotFound)
 		ctx.Response.SetBody([]byte("Bad route"))
 		return
@@ -78,8 +89,37 @@ func (gh *gatewayHandler) Handle(ctx *fasthttp.RequestCtx) {
 	case ctx.IsGet():
 		gh.getFile(ctx, driveID, filePath)
 	default:
+		// only GET method. Fasthttp has GetOnly option. Maybe delete it?
 		ctx.Error("Method "+string(ctx.Method())+" not allowed", fasthttp.StatusMethodNotAllowed)
 	}
+}
+
+func (gh *gatewayHandler) getDrives(ctx *fasthttp.RequestCtx) {
+	ls, err := gh.api.Contract().List(ctx)
+	if err != nil {
+		ctx.Error("Cannot get the drives list: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	driveList := DriveList{}
+	for _, v := range ls {
+		driveList.Drives = append(driveList.Drives, v.String())
+	}
+
+	if len(driveList.Drives) == 0 {
+		ctx.Response.Header.SetStatusCode(fasthttp.StatusNoContent)
+		ctx.Response.SetBody([]byte("No drives"))
+		return
+	}
+
+	content, err := json.Marshal(driveList)
+	if err != nil {
+		ctx.Error("Cannot create JSON response: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ctx.Response.Header.SetContentType("application/json")
+	ctx.Response.SetBody(content)
 }
 
 func (gh *gatewayHandler) getFile(ctx *fasthttp.RequestCtx, driveID drive.ID, filePath string) {
@@ -133,6 +173,8 @@ func (gh *gatewayHandler) serveFile(ctx *fasthttp.RequestCtx, file files.File) {
 }
 
 func (gh *gatewayHandler) serveDirectory(ctx *fasthttp.RequestCtx, dir files.Directory) {
+	defer dir.Close()
+
 	dirList := DirList{}
 	di := dir.Entries()
 	for di.Next() {
