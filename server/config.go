@@ -54,6 +54,10 @@ func saveConfig(cfg *Config) error {
 }
 
 func loadConfig(path string) (*Config, error) {
+	if path == "" {
+		path = resolvePath(defaultGatewayConfigPath)
+	}
+
 	content, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
