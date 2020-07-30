@@ -1,7 +1,7 @@
 package server
 
 import (
-	apihttp "github.com/proximax-storage/go-xpx-dfms-api-http"
+	"log"
 
 	"github.com/valyala/fasthttp"
 )
@@ -11,21 +11,25 @@ type gateway struct {
 	address string
 }
 
-func NewGateway(cfg *GatewayConfig) *gateway {
-	handler := newMiddleware(newGatewayHandler(apihttp.NewClientAPI(cfg.AddressAPI)))
+func NewGateway(opts ...GatewayOption) *gateway {
+	gopts := ParseOptions(opts...)
+
+	cfg, err := loadConfig(gopts.cfg)
+	if err != nil {
+		log.Fatal("Cannot load config: ", err)
+	}
+
+	gopts.ApplyToConfig(cfg)
+
 	return &gateway{
 		server: fasthttp.Server{
-			Handler:      handler,
+			Handler:      newMiddleware(newGatewayHandler(cfg.ApiAddress)),
 			Name:         cfg.Name,
-			GetOnly:      cfg.GetOnly,
-			LogAllErrors: cfg.LogError,
+			GetOnly:      true,
+			LogAllErrors: gopts.debug,
 		},
 		address: cfg.Address,
 	}
-}
-
-func DefaultGateway() *gateway {
-	return NewGateway(DefaultGatewayConfig())
 }
 
 func (g *gateway) Start() error {

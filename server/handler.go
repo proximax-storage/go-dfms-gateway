@@ -9,12 +9,13 @@ import (
 
 	files "github.com/ipfs/go-ipfs-files"
 
-	"github.com/gabriel-vasile/mimetype"
-
 	api "github.com/proximax-storage/go-xpx-dfms-api"
+	apihttp "github.com/proximax-storage/go-xpx-dfms-api-http"
 	drive "github.com/proximax-storage/go-xpx-dfms-drive"
 
 	"github.com/valyala/fasthttp"
+
+	"github.com/gabriel-vasile/mimetype"
 )
 
 const cidPattern = "[a-z1-9]{65}"
@@ -48,9 +49,16 @@ type gatewayHandler struct {
 	api api.Client
 }
 
-func newGatewayHandler(api api.Client) *gatewayHandler {
+func newGatewayHandler(apiAddress string) *gatewayHandler {
+	_, err := http.Get(apiAddress)
+	if err != nil {
+		if strings.Contains(err.Error(), "connection refused") {
+			log.Fatal("DFMS node is not ran")
+		}
+	}
+
 	return &gatewayHandler{
-		api: api,
+		api: apihttp.NewClientAPI(apiAddress),
 	}
 }
 
@@ -61,7 +69,7 @@ func (gh *gatewayHandler) Handle(ctx *fasthttp.RequestCtx) {
 
 	switch {
 	case string(path) == "/" || string(path) == "":
-		// like home page
+		// index page
 		gh.getDrives(ctx)
 		return
 	case match("^/"+cidPattern+"/?$", path):
@@ -101,15 +109,15 @@ func (gh *gatewayHandler) getDrives(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	driveList := DriveList{}
-	for _, v := range ls {
-		driveList.Drives = append(driveList.Drives, v.String())
-	}
-
-	if len(driveList.Drives) == 0 {
+	if len(ls) == 0 {
 		ctx.Response.Header.SetStatusCode(fasthttp.StatusNoContent)
 		ctx.Response.SetBody([]byte("No drives"))
 		return
+	}
+
+	driveList := DriveList{}
+	for _, v := range ls {
+		driveList.Drives = append(driveList.Drives, v.String())
 	}
 
 	content, err := json.Marshal(driveList)
@@ -125,7 +133,7 @@ func (gh *gatewayHandler) getDrives(ctx *fasthttp.RequestCtx) {
 func (gh *gatewayHandler) getFile(ctx *fasthttp.RequestCtx, driveID drive.ID, filePath string) {
 	node, err := gh.api.FS().Get(ctx, driveID, filePath)
 	if err != nil {
-		ctx.Error("Cannot get the file: "+err.Error(), fasthttp.StatusNotFound)
+		ctx.Error("Cannot get the file or directory: "+err.Error(), fasthttp.StatusNotFound)
 		return
 	}
 
@@ -182,7 +190,6 @@ func (gh *gatewayHandler) serveDirectory(ctx *fasthttp.RequestCtx, dir files.Dir
 	}
 
 	if len(dirList.Nodes) == 0 {
-		ctx.Response.Header.SetStatusCode(fasthttp.StatusNoContent)
 		ctx.Response.SetBody([]byte("Directory is empty"))
 		return
 	}
@@ -200,11 +207,9 @@ func (gh *gatewayHandler) serveDirectory(ctx *fasthttp.RequestCtx, dir files.Dir
 //TODO handle 404 error
 func notFound(ctx *fasthttp.RequestCtx) {
 	log.Printf("Client: %s, %s Request %s: %s", ctx.RemoteAddr(), ctx.Method(), ctx.URI(), ctx.Response.Body())
-	ctx.Response.SetBody([]byte("Page not found"))
 }
 
 //TODO handle server errors
 func serverError(ctx *fasthttp.RequestCtx) {
 	log.Printf("Client: %s, %s Request %s: %s", ctx.RemoteAddr(), ctx.Method(), ctx.URI(), ctx.Response.Body())
-	ctx.Response.SetBody([]byte("Internal error"))
 }
