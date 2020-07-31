@@ -9,9 +9,10 @@ import (
 const defaultGatewayConfigPath = "~/.dfms/gateway_cfg.json"
 
 func init() {
-	_, err := os.Stat(resolvePath(defaultGatewayConfigPath))
+	p := resolvePath(defaultGatewayConfigPath)
+	_, err := os.Stat(p)
 	if os.IsNotExist(err) {
-		err = saveConfig(DefaultConfig())
+		err = saveConfig(DefaultConfig(), p)
 		if err != nil {
 			log.Fatalf("Save default config: ", err)
 		}
@@ -38,13 +39,18 @@ func DefaultConfig() *Config {
 	}
 }
 
-func saveConfig(cfg *Config) error {
+func saveConfig(cfg *Config, path string) error {
+	if path == "" {
+		path = defaultGatewayConfigPath
+	}
+	path = resolvePath(path)
+
 	content, err := json.MarshalIndent(*cfg, "", "\t")
 	if err != nil {
 		return err
 	}
 
-	err = ioutil.WriteFile(resolvePath(defaultGatewayConfigPath), content, 0666)
+	err = ioutil.WriteFile(path, content, 0666)
 	if err != nil {
 		return err
 	}
@@ -54,8 +60,9 @@ func saveConfig(cfg *Config) error {
 
 func loadConfig(path string) (*Config, error) {
 	if path == "" {
-		path = resolvePath(defaultGatewayConfigPath)
+		path = defaultGatewayConfigPath
 	}
+	path = resolvePath(path)
 
 	content, err := ioutil.ReadFile(path)
 	if err != nil {
