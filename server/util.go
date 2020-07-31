@@ -1,7 +1,6 @@
 package server
 
 import (
-	"log"
 	"os"
 	"path"
 	"regexp"
@@ -11,7 +10,7 @@ import (
 func match(pattern string, b []byte) bool {
 	re, err := regexp.Compile(pattern)
 	if err != nil {
-		log.Println(err)
+		log.Errorf("Error while math the path %s: %s", b, err)
 		return false
 	}
 
@@ -24,7 +23,7 @@ func resolvePath(p string) string {
 
 		home, err := os.UserHomeDir()
 		if err != nil {
-			log.Fatal("Cannot get user home dir: ", err)
+			log.Fatalf("Cannot get user home dir: ", err)
 		}
 
 		return path.Join(home, p)

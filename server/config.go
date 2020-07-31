@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"os"
 )
 
@@ -14,7 +13,7 @@ func init() {
 	if os.IsNotExist(err) {
 		err = saveConfig(DefaultConfig())
 		if err != nil {
-			log.Fatal("Save default config: ", err)
+			log.Fatalf("Save default config: ", err)
 		}
 	} else if err != nil {
 		log.Fatal(err)

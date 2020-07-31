@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 
@@ -35,6 +34,7 @@ type Handler interface {
 func newMiddleware(handler Handler) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
 		handler.Handle(ctx)
+		log.Debugf("%s Request %s, Client %s", ctx.Method(), ctx.URI(), ctx.RemoteAddr())
 
 		switch {
 		case ctx.Response.StatusCode() == fasthttp.StatusNotFound:
@@ -53,7 +53,7 @@ func newGatewayHandler(apiAddress string) *gatewayHandler {
 	_, err := http.Get(apiAddress)
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
-			log.Fatal("DFMS node is not ran")
+			log.Fatal("DFMS node is not running")
 		}
 	}
 
@@ -150,6 +150,8 @@ func (gh *gatewayHandler) serveNode(ctx *fasthttp.RequestCtx, node files.Node) {
 		gh.serveDirectory(ctx, dir)
 		return
 	}
+
+	ctx.Error("Unsupported file type", fasthttp.StatusInternalServerError)
 }
 
 func (gh *gatewayHandler) serveFile(ctx *fasthttp.RequestCtx, file files.File) {
@@ -206,10 +208,10 @@ func (gh *gatewayHandler) serveDirectory(ctx *fasthttp.RequestCtx, dir files.Dir
 
 //TODO handle 404 error
 func notFound(ctx *fasthttp.RequestCtx) {
-	log.Printf("Client: %s, %s Request %s: %s", ctx.RemoteAddr(), ctx.Method(), ctx.URI(), ctx.Response.Body())
+	log.Debugf("Client: %s, %s Request %s: %s", ctx.RemoteAddr(), ctx.Method(), ctx.URI(), ctx.Response.Body())
 }
 
 //TODO handle server errors
 func serverError(ctx *fasthttp.RequestCtx) {
-	log.Printf("Client: %s, %s Request %s: %s", ctx.RemoteAddr(), ctx.Method(), ctx.URI(), ctx.Response.Body())
+	log.Warnf("Client: %s, %s Request %s: %s", ctx.RemoteAddr(), ctx.Method(), ctx.URI(), ctx.Response.Body())
 }
