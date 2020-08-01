@@ -69,7 +69,7 @@ func (gh *gatewayHandler) Handle(ctx *fasthttp.RequestCtx) {
 
 	switch {
 	case string(path) == "/" || string(path) == "":
-		// index page
+		// index page, list a node drives
 		gh.getDrives(ctx)
 		return
 	case match("^/"+cidPattern+"/?$", path):
@@ -81,9 +81,8 @@ func (gh *gatewayHandler) Handle(ctx *fasthttp.RequestCtx) {
 		cid = parsedPath[0]
 		filePath += parsedPath[1]
 	default:
-		// bath is not supported
-		ctx.Response.SetStatusCode(fasthttp.StatusNotFound)
-		ctx.Response.SetBody([]byte("Bad route"))
+		// path is not supported
+		ctx.Error("Bad route", fasthttp.StatusNotFound)
 		return
 	}
 
@@ -110,7 +109,6 @@ func (gh *gatewayHandler) getDrives(ctx *fasthttp.RequestCtx) {
 	}
 
 	if len(ls) == 0 {
-		ctx.Response.Header.SetStatusCode(fasthttp.StatusNoContent)
 		ctx.Response.SetBody([]byte("No drives"))
 		return
 	}
