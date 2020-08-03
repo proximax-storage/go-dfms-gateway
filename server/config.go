@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"path"
 )
 
 const defaultGatewayConfigPath = "~/.dfms/gateway_cfg.json"
@@ -39,18 +40,23 @@ func DefaultConfig() *Config {
 	}
 }
 
-func saveConfig(cfg *Config, path string) error {
-	if path == "" {
-		path = defaultGatewayConfigPath
+func saveConfig(cfg *Config, p string) error {
+	if p == "" {
+		p = defaultGatewayConfigPath
 	}
-	path = resolvePath(path)
+	p = resolvePath(p)
 
 	content, err := json.MarshalIndent(*cfg, "", "\t")
 	if err != nil {
 		return err
 	}
 
-	err = ioutil.WriteFile(path, content, 0666)
+	err = os.MkdirAll(path.Dir(p), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(p, content, 0666)
 	if err != nil {
 		return err
 	}
