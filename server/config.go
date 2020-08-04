@@ -7,13 +7,13 @@ import (
 	"path"
 )
 
-const defaultGatewayConfigPath = "~/.dfms/gateway_cfg.json"
+const defaultGatewayConfigPath = "~/.dfms_gateway/config.json"
 
 func init() {
 	p := resolvePath(defaultGatewayConfigPath)
 	_, err := os.Stat(p)
 	if os.IsNotExist(err) {
-		err = saveConfig(DefaultConfig(), p)
+		err = saveConfig(defaultConfig(), p)
 		if err != nil {
 			log.Fatalf("Save default config: ", err)
 		}
@@ -22,25 +22,23 @@ func init() {
 	}
 }
 
-type Config struct {
+type config struct {
 	Name        string
 	Address     string
-	ApiAddress  string
 	GetOnly     bool
 	LogAllError bool
 }
 
-func DefaultConfig() *Config {
-	return &Config{
+func defaultConfig() *config {
+	return &config{
 		Name:        "DFMS Gateway",
 		Address:     ":5000",
-		ApiAddress:  "http://localhost:6366",
 		GetOnly:     true,
 		LogAllError: false,
 	}
 }
 
-func saveConfig(cfg *Config, p string) error {
+func saveConfig(cfg *config, p string) error {
 	if p == "" {
 		p = defaultGatewayConfigPath
 	}
@@ -64,7 +62,7 @@ func saveConfig(cfg *Config, p string) error {
 	return err
 }
 
-func loadConfig(path string) (*Config, error) {
+func loadConfig(path string) (*config, error) {
 	if path == "" {
 		path = defaultGatewayConfigPath
 	}
@@ -75,7 +73,7 @@ func loadConfig(path string) (*Config, error) {
 		return nil, err
 	}
 
-	cfg := &Config{}
+	cfg := &config{}
 	err = json.Unmarshal(content, cfg)
 	if err != nil {
 		return nil, err

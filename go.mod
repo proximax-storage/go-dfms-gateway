@@ -1,4 +1,4 @@
-module go-dfms-gateway
+module github.com/proximax-storage/go-dfms-gateway
 
 go 1.14
 

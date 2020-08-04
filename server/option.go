@@ -1,46 +1,35 @@
 package server
 
-type GatewayOptions struct {
-	cfg        string
-	address    string
-	apiAddress string
-	debug      bool
+type gatewayOptions struct {
+	cfg     string
+	address string
+	debug   bool
 }
 
-func (opts *GatewayOptions) ApplyToConfig(cfg *Config) {
+func (opts *gatewayOptions) ApplyToConfig(cfg *config) {
+	cfg.LogAllError = opts.debug
+
 	if opts.address != "" {
 		cfg.Address = opts.address
 	}
-	if opts.apiAddress != "" {
-		cfg.ApiAddress = opts.apiAddress
-	}
-	if opts.apiAddress != "" {
-		cfg.LogAllError = opts.debug
-	}
 }
 
-type GatewayOption func(options *GatewayOptions)
+type GatewayOption func(options *gatewayOptions)
 
 func WithAddress(address string) GatewayOption {
-	return func(o *GatewayOptions) {
+	return func(o *gatewayOptions) {
 		o.address = address
 	}
 }
 
-func WithAPI(addressAPI string) GatewayOption {
-	return func(o *GatewayOptions) {
-		o.apiAddress = addressAPI
-	}
-}
-
 func Debug(b bool) GatewayOption {
-	return func(o *GatewayOptions) {
+	return func(o *gatewayOptions) {
 		o.debug = b
 	}
 }
 
 func ConfigPath(cfg string) GatewayOption {
-	return func(o *GatewayOptions) {
+	return func(o *gatewayOptions) {
 		if cfg != "" {
 			o.cfg = resolvePath(cfg)
 			return
@@ -49,8 +38,8 @@ func ConfigPath(cfg string) GatewayOption {
 	}
 }
 
-func ParseOptions(opts ...GatewayOption) *GatewayOptions {
-	gopt := &GatewayOptions{}
+func ParseOptions(opts ...GatewayOption) *gatewayOptions {
+	gopt := &gatewayOptions{}
 	for _, opt := range opts {
 		opt(gopt)
 	}

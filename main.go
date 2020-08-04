@@ -2,23 +2,43 @@ package main
 
 import (
 	"flag"
-	"go-dfms-gateway/server"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
+	gateway "github.com/proximax-storage/go-dfms-gateway/server"
+	apihttp "github.com/proximax-storage/go-xpx-dfms-api-http"
 )
 
 func main() {
-	debug := flag.Bool("debug", false, "Enable debug mode")
-	cfgPath := flag.String("cfg", "", "Path to config file")
-	address := flag.String("addr", "", "Sets gateway address")
-	addressAPI := flag.String("api-addr", "", "Sets API address")
 	flag.Parse()
 
-	s := server.NewGateway(
-		server.WithAddress(*address),
-		server.WithAPI(*addressAPI),
-		server.Debug(*debug),
-		server.ConfigPath(*cfgPath),
+	if len(flag.Args()) != 1 {
+		log.Print("Wrong number of the arguments")
+		return
+	}
+	address := flag.Arg(0)
+
+	debug := flag.Bool("debug", false, "Enable debug mode")
+	cfgPath := flag.String("cfg", "", "Path to config file")
+
+	g := gateway.NewGateway(
+		apihttp.NewClientAPI(address),
+		gateway.Debug(*debug),
+		gateway.ConfigPath(*cfgPath),
 	)
 
-	log.Fatal(s.Start())
+	go func() {
+		sigs := make(chan os.Signal, 1)
+		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+		<-sigs
+
+		err := g.Stop()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	log.Fatal(g.Start())
 }

@@ -1,16 +1,13 @@
 package server
 
 import (
-	"os"
-	"os/signal"
-	"syscall"
-
 	logging "github.com/ipfs/go-log"
+	api "github.com/proximax-storage/go-xpx-dfms-api"
 
 	"github.com/valyala/fasthttp"
 )
 
-var log = logging.Logger("core")
+var log = logging.Logger("gateway")
 
 func init() {
 	logging.SetupLogging()
@@ -21,7 +18,7 @@ type gateway struct {
 	address string
 }
 
-func NewGateway(opts ...GatewayOption) *gateway {
+func NewGateway(api api.Client, opts ...GatewayOption) *gateway {
 	gopts := ParseOptions(opts...)
 
 	cfg, err := loadConfig(gopts.cfg)
@@ -37,9 +34,9 @@ func NewGateway(opts ...GatewayOption) *gateway {
 
 	return &gateway{
 		server: fasthttp.Server{
-			Handler:      newMiddleware(newGatewayHandler(cfg.ApiAddress)),
+			Handler:      newMiddleware(newGatewayHandler(api)),
 			Name:         cfg.Name,
-			GetOnly:      true,
+			GetOnly:      cfg.GetOnly,
 			LogAllErrors: gopts.debug,
 		},
 		address: cfg.Address,
@@ -48,18 +45,6 @@ func NewGateway(opts ...GatewayOption) *gateway {
 
 func (g *gateway) Start() error {
 	println("Gateway listening at", g.address)
-
-	go func() {
-		sigs := make(chan os.Signal, 1)
-		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-		<-sigs
-
-		err := g.Stop()
-		if err != nil {
-			log.Error(err)
-		}
-	}()
-
 	return g.server.ListenAndServe(g.address)
 }
 

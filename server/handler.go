@@ -9,7 +9,6 @@ import (
 	files "github.com/ipfs/go-ipfs-files"
 
 	api "github.com/proximax-storage/go-xpx-dfms-api"
-	apihttp "github.com/proximax-storage/go-xpx-dfms-api-http"
 	drive "github.com/proximax-storage/go-xpx-dfms-drive"
 
 	"github.com/valyala/fasthttp"
@@ -49,16 +48,9 @@ type gatewayHandler struct {
 	api api.Client
 }
 
-func newGatewayHandler(apiAddress string) *gatewayHandler {
-	_, err := http.Get(apiAddress)
-	if err != nil {
-		if strings.Contains(err.Error(), "connection refused") {
-			log.Error("DFMS node is not running")
-		}
-	}
-
+func newGatewayHandler(api api.Client) *gatewayHandler {
 	return &gatewayHandler{
-		api: apihttp.NewClientAPI(apiAddress),
+		api: api,
 	}
 }
 
