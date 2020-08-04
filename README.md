@@ -4,13 +4,16 @@ HTTP Gateway for DFMS Drive
 ## Overview
 Used for determining Content-Type to render a file in a browser.
 
+## Test
+`go test ./...`
+
 ## Build
 
-```go build -o dfms_gateway```
+`go build -o dfms_gateway`
 
 ## Run
 
-```./dfms_gateway```
+`./dfms_gateway`
 
 Can ran with flags
 

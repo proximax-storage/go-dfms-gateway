@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"testing"
 	"time"
@@ -8,9 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/valyala/fasthttp"
+
+	files "github.com/ipfs/go-ipfs-files"
 )
 
-func TestGatewayHandler_Handle(t *testing.T) {
+func TestGatewayHandler(t *testing.T) {
 	s := NewGateway()
 	go s.Start()
 
@@ -26,6 +29,10 @@ func TestGatewayHandler_Handle(t *testing.T) {
 		var dst []byte
 		statusCode, b, err := client.Get(dst, addr)
 		assert.Nil(t, err, err)
+
+		if statusCode == fasthttp.StatusInternalServerError {
+			t.Skip()
+		}
 		assert.Equal(t, fasthttp.StatusOK, statusCode)
 
 		dl := DriveList{}
@@ -57,7 +64,7 @@ func TestGatewayHandler_Handle(t *testing.T) {
 		assert.Equal(t, fasthttp.StatusOK, statusCode)
 
 		driveList := DirList{}
-		err = json.Unmarshal(b, &dl)
+		err = json.Unmarshal(b, &driveList)
 		assert.Nil(t, err, err)
 		if len(driveList.Nodes) == 0 {
 			assert.Equal(t, "Directory is empty", string(b))
@@ -88,4 +95,106 @@ func TestGatewayHandler_Handle(t *testing.T) {
 	})
 
 	s.Stop()
+}
+
+type (
+	file struct {
+		path    []byte
+		content []byte
+	}
+	folder struct {
+		path    []byte
+		content []string
+	}
+	unknown []byte
+
+	mockHandler struct {
+		gatewayHandler
+		file    file
+		folder  folder
+		unknown unknown
+	}
+)
+
+func initMock() mockHandler {
+	return mockHandler{
+		gatewayHandler: gatewayHandler{},
+		file: file{
+			path:    []byte("/file"),
+			content: []byte("test_content"),
+		},
+		folder: folder{
+			path: []byte("/folder"),
+			content: []string{
+				"first",
+				"second",
+				"third",
+			},
+		},
+		unknown: []byte("/unknown"),
+	}
+}
+
+func (m *mockHandler) Handle(ctx *fasthttp.RequestCtx) {
+	switch {
+	case bytes.Equal(ctx.Path(), m.file.path):
+		m.mockFile(ctx)
+	case bytes.Equal(ctx.Path(), m.folder.path):
+		m.mockFolder(ctx)
+	}
+}
+
+func (m *mockHandler) mockFile(ctx *fasthttp.RequestCtx) {
+	file := files.NewBytesFile(m.file.content)
+	m.serveNode(ctx, file)
+}
+
+func (m *mockHandler) mockFolder(ctx *fasthttp.RequestCtx) {
+	m.serveNode(ctx, newDir(m.folder.content))
+}
+
+func TestGatewayHandler_Mock(t *testing.T) {
+	client := fasthttp.Client{}
+	mh := initMock()
+
+	s := gateway{
+		server: fasthttp.Server{
+			Handler: mh.Handle,
+		},
+		address: "localhost:5000",
+	}
+	go s.Start()
+	defer s.Stop()
+
+	serverAddrs := "http://" + s.address
+
+	time.Sleep(5 * time.Second)
+	t.Run("File", func(t *testing.T) {
+		var dst []byte
+		statusCode, b, err := client.Get(dst, serverAddrs+"/"+string(mh.file.path))
+		assert.Nil(t, err, err)
+		assert.Equal(t, fasthttp.StatusOK, statusCode)
+		assert.Equal(t, mh.file.content, b)
+	})
+
+	t.Run("Folder", func(t *testing.T) {
+		var dst []byte
+		statusCode, b, err := client.Get(dst, serverAddrs+"/"+string(mh.folder.path))
+		assert.Nil(t, err, err)
+		assert.Equal(t, fasthttp.StatusOK, statusCode)
+
+		var list DirList
+		err = json.Unmarshal(b, &list)
+		assert.Nil(t, err, err)
+		assert.Equal(t, mh.folder.content, list.Nodes)
+	})
+}
+
+func newDir(content []string) files.Directory {
+	dir := make(map[string]files.Node, len(content))
+	for _, v := range content {
+		dir[v] = files.NewBytesFile([]byte(""))
+	}
+
+	return files.NewMapDirectory(dir)
 }

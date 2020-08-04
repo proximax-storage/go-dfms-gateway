@@ -53,7 +53,7 @@ func newGatewayHandler(apiAddress string) *gatewayHandler {
 	_, err := http.Get(apiAddress)
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
-			log.Fatal("DFMS node is not running")
+			log.Error("DFMS node is not running")
 		}
 	}
 
