@@ -29,7 +29,10 @@ func NewGateway(api api.Client, opts ...GatewayOption) *gateway {
 	gopts.ApplyToConfig(cfg)
 
 	if gopts.debug {
-		logging.SetDebugLogging()
+		err := logging.SetLogLevel("DEBUG", "gateway")
+		if err != nil {
+			log.Warn("Cannot load config: ", err)
+		}
 	}
 
 	return &gateway{

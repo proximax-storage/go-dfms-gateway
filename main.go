@@ -12,6 +12,8 @@ import (
 )
 
 func main() {
+	debug := flag.Bool("debug", false, "Enable debug mode")
+	cfgPath := flag.String("cfg", "", "Path to config file")
 	flag.Parse()
 
 	if len(flag.Args()) != 1 {
@@ -19,9 +21,6 @@ func main() {
 		return
 	}
 	address := flag.Arg(0)
-
-	debug := flag.Bool("debug", false, "Enable debug mode")
-	cfgPath := flag.String("cfg", "", "Path to config file")
 
 	g := gateway.NewGateway(
 		apihttp.NewClientAPI(address),
