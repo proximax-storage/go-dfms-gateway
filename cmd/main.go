@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	gateway "github.com/proximax-storage/go-dfms-gateway/server"
+	gateway "github.com/proximax-storage/go-dfms-gateway"
 	apihttp "github.com/proximax-storage/go-xpx-dfms-api-http"
 )
 

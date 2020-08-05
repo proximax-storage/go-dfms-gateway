@@ -1,4 +1,4 @@
-package server
+package go_dfms_gateway
 
 type gatewayOptions struct {
 	cfg     string
