@@ -4,13 +4,35 @@ type gatewayOptions struct {
 	cfg     string
 	address string
 	debug   bool
+
+	enableCors     bool
+	allowedMethods []string
+	allowedHeaders []string
+	allowedOrigins []string
 }
 
 func (opts *gatewayOptions) ApplyToConfig(cfg *config) {
 	cfg.LogAllError = opts.debug
+	cfg.CORs.Enable = opts.enableCors
 
 	if opts.address != "" {
 		cfg.Address = opts.address
+	}
+
+	if opts.enableCors {
+		cfg.GetOnly = !opts.enableCors
+
+		if opts.allowedMethods != nil {
+			cfg.CORs.AllowedMethods = opts.allowedMethods
+		}
+
+		if opts.allowedHeaders != nil {
+			cfg.CORs.AllowedHeaders = opts.allowedHeaders
+		}
+
+		if opts.allowedOrigins != nil {
+			cfg.CORs.AllowedOrigins = opts.allowedOrigins
+		}
 	}
 }
 
@@ -40,9 +62,33 @@ func ConfigPath(cfg string) GatewayOption {
 
 func ParseOptions(opts ...GatewayOption) *gatewayOptions {
 	gopt := &gatewayOptions{}
+
 	for _, opt := range opts {
 		opt(gopt)
 	}
 
 	return gopt
+}
+
+func EnableCORs(b bool) GatewayOption {
+	return func(o *gatewayOptions) {
+		o.enableCors = b
+	}
+}
+
+func AllowedOrigins(origins ...string) GatewayOption {
+	return func(o *gatewayOptions) {
+		o.allowedOrigins = origins
+	}
+}
+
+func AllowedHeaders(headers ...string) GatewayOption {
+	return func(o *gatewayOptions) {
+		o.allowedHeaders = headers
+	}
+}
+func AllowedMethods(methods ...string) GatewayOption {
+	return func(o *gatewayOptions) {
+		o.allowedMethods = methods
+	}
 }

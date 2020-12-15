@@ -7,7 +7,7 @@ import (
 	"path"
 )
 
-const defaultGatewayConfigPath = "~/.dfms_gateway/config.json"
+const defaultGatewayConfigPath = "~/.dfms-client_gateway/config.json"
 
 func init() {
 	p := resolvePath(defaultGatewayConfigPath)
@@ -27,14 +27,17 @@ type config struct {
 	Address     string
 	GetOnly     bool
 	LogAllError bool
+
+	CORs *cors
 }
 
 func defaultConfig() *config {
 	return &config{
 		Name:        "DFMS Gateway",
 		Address:     ":5000",
-		GetOnly:     true,
+		GetOnly:     false,
 		LogAllError: false,
+		CORs:        DefaultCors(),
 	}
 }
 

@@ -30,11 +30,20 @@ type Handler interface {
 	Handle(ctx *fasthttp.RequestCtx)
 }
 
-func newMiddleware(handler Handler) fasthttp.RequestHandler {
+func newMiddleware(handler Handler, cors *cors) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
-		handler.Handle(ctx)
-		log.Debugf("%s Request %s, Client %s", ctx.Method(), ctx.URI(), ctx.RemoteAddr())
+		log.Debugf("New %s Request %s, Client %s", ctx.Method(), ctx.URI(), ctx.RemoteAddr())
 
+		if err := cors.check(ctx); err != nil {
+			ctx.Error(err.Error(), fasthttp.StatusNotAcceptable)
+			return
+		}
+
+		if ctx.IsOptions() {
+			return
+		}
+
+		handler.Handle(ctx)
 		switch {
 		case ctx.Response.StatusCode() == fasthttp.StatusNotFound:
 			notFound(ctx)
@@ -55,6 +64,11 @@ func newGatewayHandler(api api.Client) *gatewayHandler {
 }
 
 func (gh *gatewayHandler) Handle(ctx *fasthttp.RequestCtx) {
+	if !ctx.IsGet() {
+		ctx.Error("Method "+string(ctx.Method())+" not allowed", fasthttp.StatusMethodNotAllowed)
+		return
+	}
+
 	path := ctx.Path()
 	cid := ""
 	filePath := "/"
@@ -84,13 +98,7 @@ func (gh *gatewayHandler) Handle(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	switch {
-	case ctx.IsGet():
-		gh.getFile(ctx, driveID, filePath)
-	default:
-		// only GET method. Fasthttp has GetOnly option. Maybe delete it?
-		ctx.Error("Method "+string(ctx.Method())+" not allowed", fasthttp.StatusMethodNotAllowed)
-	}
+	gh.getFile(ctx, driveID, filePath)
 }
 
 func (gh *gatewayHandler) getDrives(ctx *fasthttp.RequestCtx) {
@@ -198,10 +206,10 @@ func (gh *gatewayHandler) serveDirectory(ctx *fasthttp.RequestCtx, dir files.Dir
 
 //TODO handle 404 error
 func notFound(ctx *fasthttp.RequestCtx) {
-	log.Debugf("Client: %s, %s Request %s: %s", ctx.RemoteAddr(), ctx.Method(), ctx.URI(), ctx.Response.Body())
+	log.Debugf("Client: %s, %s Request %s, URL: %s", ctx.RemoteAddr(), ctx.Method(), ctx.URI(), ctx.Response.Body())
 }
 
 //TODO handle server errors
 func serverError(ctx *fasthttp.RequestCtx) {
-	log.Warnf("Client: %s, %s Request %s: %s", ctx.RemoteAddr(), ctx.Method(), ctx.URI(), ctx.Response.Body())
+	log.Warnf("Client: %s, %s Request %s, URL: %s", ctx.RemoteAddr(), ctx.Method(), ctx.URI(), ctx.Response.Body())
 }
