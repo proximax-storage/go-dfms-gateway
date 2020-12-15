@@ -24,6 +24,7 @@ func TestNewGateway(t *testing.T) {
 	assert.Equal(t, gateway.server.Name, cfg.Name)
 	assert.Equal(t, gateway.server.GetOnly, cfg.GetOnly)
 	assert.Equal(t, gateway.server.LogAllErrors, cfg.LogAllError)
+	assert.Equal(t, gateway.enableCORs, cfg.CORs.Enable)
 
 	go func() {
 		err := gateway.Start()
@@ -40,13 +41,26 @@ func TestNewGatewayWithOptions(t *testing.T) {
 		address: ":5555",
 		debug:   true,
 	}
+
+	methods := []string{"test m"}
+	headers := []string{"test h"}
+	origins := []string{"test o"}
+
 	gateway := NewGateway(
 		clientApi,
 		WithAddress(opts.address),
 		Debug(true),
+		EnableCORs(false),
+		AllowedMethods(methods...),
+		AllowedHeaders(headers...),
+		AllowedOrigins(origins...),
 	)
 	assert.Equal(t, opts.address, gateway.address)
 	assert.Equal(t, opts.debug, gateway.server.LogAllErrors)
+	assert.Equal(t, opts.enableCors, gateway.enableCORs)
+	assert.Equal(t, opts.allowedOrigins, gateway.cors.AllowedOrigins)
+	assert.Equal(t, opts.allowedMethods, gateway.cors.AllowedMethods)
+	assert.Equal(t, opts.allowedHeaders, gateway.cors.AllowedHeaders)
 
 	go func() {
 		err := gateway.Start()
