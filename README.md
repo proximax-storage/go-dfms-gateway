@@ -38,7 +38,7 @@ func main() {
 
 There is the example - `main.go`.
 
-`go build -o dfms_gateway`
+`cd cmd && go build -o dfms_gateway`
 
 ## Run
 
@@ -50,22 +50,34 @@ Can ran with flags
 
 ### Flags
 
-`-addr` - gateway listening address
-
-`-debug` - enable debug mode
-
-`-cfg` - a path to a custom config file
+- `-addr` - gateway listening address
+- `-debug` - enable debug mode
+- `-cors` - enable cors
+- `-methods` - List of allowed CORs methods separated by commas.
+- `-headers` - List of allowed CORs headers separated by commas.
+- `-origins` - List of allowed CORs origins separated by commas.
 
 ## Config
 
-The default config path `~/.dfms_gateway/config.json`.
+The default config path `~/.dfms-client_gateway/config.json`.
 
 ```json
 {
-	"Name": "DFMS Gateway",
-	"Address": ":5000",
-	"ApiAddress": "http://localhost:6366",
-	"GetOnly": true,
-	"LogAllError": false
+  "Name": "DFMS Gateway",
+  "Address": ":5000",
+  "GetOnly": false,
+  "LogAllError": false,
+  "CORs": {
+    "Enable": true,
+    "AllowedMethods": [
+      "*"
+    ],
+    "AllowedHeaders": [
+      "*"
+    ],
+    "AllowedOrigins": [
+      "*"
+    ]
+  }
 }
 ```
