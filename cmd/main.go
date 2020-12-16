@@ -17,9 +17,9 @@ func main() {
 	cfgPath := flag.String("cfg", "", "Path to config file")
 
 	cors := flag.Bool("cors", false, "Enable CORs")
-	allowedMethods := flag.String("methods", "", "Allowed CORs methods. List separated by commas.")
-	allowedHeaders := flag.String("headers", "", "Allowed CORs headers. List separated by commas.")
-	allowedOrigins := flag.String("origins", "", "Allowed CORs origins. List separated by commas.")
+	allowedMethods := flag.String("methods", "", "List of allowed CORs methods separated by commas.")
+	allowedHeaders := flag.String("headers", "", "List of allowed CORs headers separated by commas.")
+	allowedOrigins := flag.String("origins", "", "List of allowed CORs origins separated by commas.")
 	flag.Parse()
 
 	var methods []string
