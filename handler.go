@@ -181,6 +181,11 @@ func (gh *gatewayHandler) serveDirectory(ctx *fasthttp.RequestCtx, dir files.Dir
 		dirList.Nodes = append(dirList.Nodes, di.Name())
 	}
 
+	if di.Err() != nil {
+		ctx.Error("Cannot write response: "+di.Err().Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if len(dirList.Nodes) == 0 {
 		ctx.Response.SetBody([]byte("Directory is empty"))
 		return
