@@ -17,7 +17,7 @@ func NewCors(allowedMethods []string, allowedHeaders []string, allowedOrigins []
 
 func DefaultCors() *cors {
 	return &cors{
-		Enable:         true,
+		Enable:         false,
 		AllowedMethods: []string{"*"},
 		AllowedHeaders: []string{"*"},
 		AllowedOrigins: []string{"*"},
@@ -25,8 +25,7 @@ func DefaultCors() *cors {
 }
 
 type cors struct {
-	Enable bool
-
+	Enable         bool
 	AllowedMethods []string
 	AllowedHeaders []string
 	AllowedOrigins []string

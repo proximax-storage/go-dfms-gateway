@@ -13,10 +13,9 @@ func init() {
 }
 
 type gateway struct {
-	server     fasthttp.Server
-	address    string
-	enableCORs bool
-	cors       *cors
+	server  fasthttp.Server
+	address string
+	cors    *cors
 }
 
 func NewGateway(api api.Client, opts ...GatewayOption) *gateway {
@@ -44,9 +43,8 @@ func NewGateway(api api.Client, opts ...GatewayOption) *gateway {
 			GetOnly:      cfg.GetOnly,
 			LogAllErrors: gopts.debug,
 		},
-		address:    cfg.Address,
-		enableCORs: cfg.CORs.Enable,
-		cors:       cfg.CORs,
+		address: cfg.Address,
+		cors:    cfg.CORs,
 	}
 }
 

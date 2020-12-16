@@ -51,8 +51,8 @@ Can ran with flags
 ### Flags
 
 - `-addr` - gateway listening address
-- `-debug` - enable debug mode
-- `-cors` - enable cors
+- `-debug` - enable debug mode (Default = false).
+- `-cors` - enable cors (Default = false).
 - `-methods` - List of allowed CORs methods separated by commas.
 - `-headers` - List of allowed CORs headers separated by commas.
 - `-origins` - List of allowed CORs origins separated by commas.

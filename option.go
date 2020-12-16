@@ -19,7 +19,7 @@ func (opts *gatewayOptions) ApplyToConfig(cfg *config) {
 		cfg.Address = opts.address
 	}
 
-	if opts.enableCors {
+	if cfg.CORs.Enable {
 		cfg.GetOnly = !opts.enableCors
 
 		if opts.allowedMethods != nil {
