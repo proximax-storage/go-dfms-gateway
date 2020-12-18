@@ -18,8 +18,8 @@ func NewCors(allowedMethods []string, allowedHeaders []string, allowedOrigins []
 func DefaultCors() *cors {
 	return &cors{
 		Enable:         false,
-		AllowedMethods: []string{"*"},
-		AllowedHeaders: []string{"*"},
+		AllowedMethods: []string{"GET", "OPTIONS", "HEAD"},
+		AllowedHeaders: []string{"Accept", "Accept-Language", "Content-Language", "Content-Type"},
 		AllowedOrigins: []string{"*"},
 	}
 }
@@ -42,34 +42,10 @@ func (c *cors) check(ctx *fasthttp.RequestCtx) error {
 		ctx.Response.Header.Set("Access-Control-Allow-Origin", origin)
 	}
 
-	//ctx.Response.Header.Set("Access-Control-Allow-Methods", "Content-type")
-	//ctx.Response.Header.Set("Access-Control-Allow-Headers", "GET")
+	ctx.Response.Header.Set("Access-Control-Allow-Methods", strings.Join(c.AllowedMethods, ","))
+	ctx.Response.Header.Set("Access-Control-Allow-Headers", strings.Join(c.AllowedHeaders, ","))
 
-	//check method
-	requestMethod := string(ctx.Request.Header.Peek("Access-Control-Request-Method"))
-	if requestMethod != "" || isAllowed(c.AllowedMethods, requestMethod) {
-		ctx.Response.Header.Set("Access-Control-Allow-Methods", strings.Join(c.AllowedMethods, ","))
-	}
-
-	// check header
-	requestHeaders := string(ctx.Request.Header.Peek("Access-Control-Request-Headers"))
-	if requestHeaders != "" {
-		headers := strings.Split(requestHeaders, ",")
-
-		allowed := true
-		for _, h := range headers {
-			if !isAllowed(c.AllowedHeaders, h) {
-				allowed = false
-				break
-			}
-		}
-
-		if allowed {
-			ctx.Response.Header.Set("Access-Control-Allow-Headers", strings.Join(c.AllowedHeaders, ","))
-		}
-	}
-
-	log.Debugf("Enable CORs for: Client: %s, %s Request, URL: %s ", ctx.RemoteAddr(), ctx.Method(), ctx.URI())
+	log.Debugf("New CORs %s Request, Origin: %s, Client: %s", ctx.Method(), origin, ctx.RemoteAddr())
 	return nil
 }
 
@@ -79,11 +55,9 @@ func isAllowed(allowed []string, v string) bool {
 			return true
 		}
 
-		//for _, v := range values {
 		if strings.TrimSpace(strings.ToUpper(a)) == strings.TrimSpace(strings.ToUpper(v)) {
 			return true
 		}
-		//}
 	}
 
 	return false
