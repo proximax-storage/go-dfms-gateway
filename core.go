@@ -3,7 +3,6 @@ package go_dfms_gateway
 import (
 	logging "github.com/ipfs/go-log"
 	api "github.com/proximax-storage/go-xpx-dfms-api"
-
 	"github.com/valyala/fasthttp"
 )
 
@@ -16,6 +15,7 @@ func init() {
 type gateway struct {
 	server  fasthttp.Server
 	address string
+	cors    *cors
 }
 
 func NewGateway(api api.Client, opts ...GatewayOption) *gateway {
@@ -29,20 +29,22 @@ func NewGateway(api api.Client, opts ...GatewayOption) *gateway {
 	gopts.ApplyToConfig(cfg)
 
 	if gopts.debug {
-		err := logging.SetLogLevel("DEBUG", "gateway")
+		err := logging.SetLogLevel("gateway", "DEBUG")
 		if err != nil {
-			log.Warn("Cannot load config: ", err)
+			println("Cannot set DEBUG mode for gateway: ", err.Error())
 		}
 	}
 
+	handler := newMiddleware(newGatewayHandler(api), cfg.CORs)
 	return &gateway{
 		server: fasthttp.Server{
-			Handler:      newMiddleware(newGatewayHandler(api)),
+			Handler:      handler,
 			Name:         cfg.Name,
 			GetOnly:      cfg.GetOnly,
 			LogAllErrors: gopts.debug,
 		},
 		address: cfg.Address,
+		cors:    cfg.CORs,
 	}
 }
 
