@@ -46,8 +46,6 @@ Run with an address of DFMS API server as argument.
 
 `./dfms_gateway "api-addr"`
 
-Can ran with flags
-
 ### Flags
 
 - `-addr` - gateway listening address
@@ -68,12 +66,17 @@ The default config path `~/.dfms-client_gateway/config.json`.
   "GetOnly": false,
   "LogAllError": false,
   "CORs": {
-    "Enable": true,
+    "Enable": false,
     "AllowedMethods": [
-      "*"
+      "GET",
+      "OPTIONS",
+      "HEAD"
     ],
     "AllowedHeaders": [
-      "*"
+      "Accept",
+      "Accept-Language",
+      "Content-Language",
+      "Content-Type"
     ],
     "AllowedOrigins": [
       "*"
